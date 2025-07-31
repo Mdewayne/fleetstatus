@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: "0002"
+      author: you
+      changes:
+        - addColumn:
+            tableName: vehicle_status
+            columns:
+              - column:
+                  name: fuel_level
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: engine_status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: location
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: speed
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: temperature
+                  type: DOUBLE PRECISION
+                  constraints:
+                    nullable: true
+              - column:
+                  name: maintenance_due
+                  type: BOOLEAN
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_maintenance_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: driver_id
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_online
+                  type: BOOLEAN
+                  constraints:
+                    nullable: true 

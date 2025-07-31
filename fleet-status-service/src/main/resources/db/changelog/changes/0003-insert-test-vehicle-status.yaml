@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0003-insert-test-vehicle-status
+      author: ai
+      changes:
+        - insert:
+            tableName: vehicle_status
+            columns:
+              - column: { name: vin, value: "TESTVIN123" }
+              - column: { name: odometer, valueNumeric: 10000 }
+              - column: { name: fuel_level, valueNumeric: 50 }
+              - column: { name: engine_status, value: "RUNNING" }
+              - column: { name: timestamp, valueDate: "2025-07-15T09:00:00" }
+        - insert:
+            tableName: vehicle_status
+            columns:
+              - column: { name: vin, value: "TESTVIN456" }
+              - column: { name: odometer, valueNumeric: 20000 }
+              - column: { name: fuel_level, valueNumeric: 75 }
+              - column: { name: engine_status, value: "STOPPED" }
+              - column: { name: timestamp, valueDate: "2025-07-15T10:00:00" } 

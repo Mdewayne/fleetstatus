@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: "0001"
+      author: you
+      changes:
+        - createTable:
+            tableName: vehicle_status
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: vin
+                  type: VARCHAR(17)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: odometer
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false

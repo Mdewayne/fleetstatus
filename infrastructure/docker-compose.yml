@@ -1,0 +1,159 @@
+version: '3.8'
+
+networks:
+  fleet-network:
+    driver: bridge
+
+services:
+
+  postgres:
+    image: postgres:14
+    container_name: fleet_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: fleetdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - fleet_postgres_data:/var/lib/postgresql/data
+    networks:
+      - fleet-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: fleet_pgadmin
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres
+    networks:
+      - fleet-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: fleet_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - fleet_redis_data:/data
+    networks:
+      - fleet-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: fleet_zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - fleet_zookeeper_data:/var/lib/zookeeper/data
+      - fleet_zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - fleet-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: fleet_kafka
+    restart: always
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    depends_on:
+      - zookeeper
+    volumes:
+      - fleet_kafka_data:/var/lib/kafka/data
+    networks:
+      - fleet-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fleet_prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - fleet_prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - fleet-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fleet_grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - fleet_grafana_data:/var/lib/grafana
+    networks:
+      - fleet-network
+
+  fleet-status-service:
+    build:
+      context: ../fleet-status-service
+    container_name: fleet_status_service
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_URL: redis://redis:6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fleetdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - fleet-network
+
+  api-gateway:
+    build:
+      context: ../api-gateway
+    container_name: api_gateway
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - fleet-status-service
+    networks:
+      - fleet-network
+
+volumes:
+  fleet_postgres_data:
+  fleet_redis_data:
+  fleet_zookeeper_data:
+  fleet_zookeeper_logs:
+  fleet_kafka_data:
+  fleet_prometheus_data:
+  fleet_grafana_data:
